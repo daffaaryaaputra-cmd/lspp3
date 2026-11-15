@@ -96,7 +96,7 @@ COLLATE utf8mb4_unicode_ci;
 
     7. PERIKSA DATABASE
 
-    SHOW DATABASES;
+    SHOW DATABASES;	
 
     Pastikan database ukom9 muncul.
 
@@ -107,8 +107,13 @@ CREATE USER 'ukom9'@'localhost'
 IDENTIFIED BY 'UkomDB@2026';
 
 GRANT ALL PRIVILEGES ON ukom9.*
-TO 'ukom9'@'localhost'
+TO 'ukom9'@'localhost';
 
+===============================
+- UNTUK MENGHAPUS CREATE USER 
+
+DROP USER 'ukom9'@'localhost';
+===============================
 
 CREATE USER 'ukom9-daffa'@'localhost'
 IDENTIFIED BY 'UkomDB@2026';
@@ -241,11 +246,13 @@ ServerAlias www.ukom12tkja-9.sch.id
         
     sudo systemctl reload apache2
     sudo systemctl status apache2
+
     Buat file PHP:
 
     sudo nano /var/www/ukom12tkja-9.sch.id/database.php
 
     Isi file dengan kode berikut:
+=====================================================
 <?php
 $host = "localhost";
 $user = "ukom9";    
@@ -366,6 +373,7 @@ $conn->close();
     sudo nano /etc/apache2/sites-available/ukom12tkja-9.sch.id.conf
 
     Isi konfigurasi:
+=====================================================
 
 <VirtualHost *:80>
     ServerName ukom12tkja-9.sch.id
@@ -384,6 +392,8 @@ $conn->close();
     CustomLog ${APACHE_LOG_DIR}/ukom9-access.log combined
 </VirtualHost>
 
+======================================
+
     Buat direktori dan aktifkan situs:
 
     sudo mkdir -p /var/www/ukom12tkja-9.sch.id
@@ -393,7 +403,6 @@ $conn->close();
 
     Pastikan hasil pemeriksaan konfigurasi menunjukkan Syntax OK.
 
-
     21. BUAT LANDING PAGE
 
     Buka file:
@@ -401,7 +410,7 @@ $conn->close();
     sudo nano /var/www/ukom12tkja-9.sch.id/index.html
 
     Isi dengan HTML berikut:
-
+========================================================
     <!DOCTYPE html>
     <html lang="id">
     <head>
@@ -420,7 +429,7 @@ $conn->close();
         <a href="/phpmyadmin/">phpMyAdmin</a>
     </body>
     </html>
-
+========================================================
 
     ============================================================
     BAGIAN 5. KONFIGURASI DNS BIND9
@@ -441,31 +450,30 @@ $conn->close();
     Tambahkan konfigurasi berikut:
 
     zone "ukom12tkja-9.sch.id" {
-    type master;
-    file "/etc/bind/db.ukom12tkja-9.sch.id";
-};
+        type master;
+        file "/etc/bind/db.ukom12tkja-9.sch.id";
+    };
 
-zone "9.100.100.in-addr.arpa" {
-    type master;
-    file "/etc/bind/db.100.100.9";
-};
+    zone "9.100.100.in-addr.arpa" {
+        type master;
+        file "/etc/bind/db.100.100.9";
+    };
 
 
     24. BUAT FILE ZONA DNS
 
-    Salin file zona bawaan:
+    File forward zone:
 
-    
     sudo nano /etc/bind/db.ukom12tkja-9.sch.id
 
-    Isi file zona:
+    Isi file:
 
 $TTL 604800
 @   IN  SOA ns1.ukom12tkja-9.sch.id. admin.ukom12tkja-9.sch.id. (
-        2026110301
+        2026111402
         604800
         86400
-        249200
+        2432200
         604800
 )
 
@@ -474,26 +482,24 @@ $TTL 604800
 ns1     IN  A   100.100.9.2
 www     IN  A   100.100.9.2
 
-================================================
-sudo cp /etc/bind/db.local /etc/bind/db.ukom12tkja-9.sch.id
-sudo named-checkzone ukom12tkja-9.sch.id /etc/bind/db.ukom12tkja-9.sch.id
-================================================
+    File reverse zone:
 
-sudo nano /etc/bind/db.100.100.9
+    sudo nano /etc/bind/db.100.100.9
+
+    Isi file:
 
 $TTL 604800
 @   IN SOA ns1.ukom12tkja-9.sch.id. admin.ukom12tkja-9.sch.id. (
         2026110701
         604800
         86400
-        249200
+        2432200
         604800
 )
 
 @   IN NS ns1.ukom12tkja-9.sch.id.
 
 2 IN PTR ukom12tkja-9.sch.id.
-
 
 
     25. KONFIGURASI OPSI BIND9
@@ -505,42 +511,42 @@ $TTL 604800
     Sesuaikan konfigurasi menjadi:
 
     options {
-    directory "/var/cache/bind";
+        directory "/var/cache/bind";
 
-    listen-on {
-        127.0.0.1;
-        100.100.9.2;
+        listen-on {
+            127.0.0.1;
+            100.100.9.2;
+        };
+
+        listen-on-v6 { none; };
+
+        allow-query {
+            localhost;
+            10.10.9.0/28;
+            192.168.9.0/24;
+        };
+
+        recursion yes;
+
+        allow-recursion {
+            localhost;
+            10.10.9.0/28;
+            192.168.9.0/24;
+        };
+
+        allow-query-cache {
+            localhost;
+            10.10.9.0/28;
+            192.168.9.0/24;
+        };
+
+        forwarders {
+            8.8.8.8;
+            1.1.1.1;
+        };
+
+        dnssec-validation auto;
     };
-
-    listen-on-v6 { none; };
-
-    allow-query {
-        localhost;
-        10.10.9.0/28;
-        192.168.9.0/24;
-    };
-
-    recursion yes;
-
-    allow-recursion {
-        localhost;
-        10.10.9.0/28;
-        192.168.9.0/24;
-    };
-
-    allow-query-cache {
-        localhost;
-        10.10.9.0/28;
-        192.168.9.0/24;
-    };
-
-    forwarders {
-        8.8.8.8;
-        1.1.1.1;
-    };
-
-    dnssec-validation auto;
-};
 
 
     26. VALIDASI DAN RELOAD BIND9
@@ -556,30 +562,6 @@ $TTL 604800
     dig @100.100.9.2 ukom12tkja-9.sch.id
 
     Pastikan hasil DNS mengarah ke 100.100.9.2.
-
-sudo nano /etc/bind/db.ukom12tkja-9.sch.id
-
-$TTL 604800
-
-@   IN  SOA ns1.ukom12tkja-9.sch.id. admin.ukom12tkja-9.sch.id. (
-        2026111402
-        604800
-        86400
-        249200
-        604800
-)
-
-@       IN  NS  ns1.ukom12tkja-9.sch.id.
-
-@       IN  A   100.100.9.2
-ns1     IN  A   100.100.9.2
-www     IN  A   100.100.9.2
-
-sudo named-checkconf
-
-sudo named-checkzone ukom12tkja-9.sch.id /etc/bind/db.ukom12tkja-9.sch.id
-
-sudo systemctl reload named
 
     ============================================================
     BAGIAN 7. KONFIGURASI FIREWALL UFW
